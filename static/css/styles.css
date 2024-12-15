@@ -1,0 +1,32 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e90ff;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    text-align: center;
+    margin: 20px auto;
+}
+input {
+    padding: 10px;
+    width: 200px;
+}
+button {
+    padding: 10px;
+    cursor: pointer;
+}
+.weather-info, .forecast, .news {
+    margin: 20px;
+    background: #f8f8f8;
+    color: #333;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#map {
+    width: 100%;
+    height: 400px;
+    margin: 20px auto;
+}

@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    <style>
+      .container {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        font-size: 32px;
+        color: #1e90ff;
+      }
+
+      .search-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .search-container input {
+        width: 300px;
+        padding: 8px 12px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 30px;
+      }
+
+      .search-container button {
+        margin-left: 10px;
+        padding: 8px 16px;
+        font-size: 16px;
+        background-color: #fff;
+        color: #1e90ff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        border-radius: 30px;
+        font-weight: bold;
+      }
+
+      .weather-container-and-map{
+        display: flex;
+        flex-direction: row;
+      }
+
+      .weather-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        width: 30%;
+      }
+
+      .weather-info,
+      .forecast-container {
+        flex: 1;
+        background-color: #f2f2f2;
+        color: black;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .weather-info h2,
+      .forecast-container h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      .weather-info .temperature {
+        font-size: 48px;
+        font-weight: bold;
+        color: #1e90ff;
+        margin-bottom: 10px;
+      }
+
+      .weather-info .weather-details {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+
+      .weather-info .weather-details .detail {
+        width: 48%;
+        margin-bottom: 10px;
+      }
+
+      #map {
+        width: 65%;
+        height: 400px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>ClimaTrends</h1>
+        <div class="search-container">
+          <input
+            type="text"
+            id="city-search"
+            placeholder="Search for a city..."
+          />
+          <button onclick="searchCity()">Search🔍</button>
+        </div>
+      </div>
+      <div class="weather-container-and-map">
+      <!-- Weather Information -->
+      <div class="weather-container">
+        <div class="weather-info">
+          <h2 id="city-name">Mumbai</h2>
+          <div class="temperature" id="temp">--°C</div>
+          <div class="weather-details">
+            <div class="detail" id="humidity">Humidity: --%</div>
+            <div class="detail" id="pressure">Pressure: -- hPa</div>
+            <div class="detail" id="wind">Wind: -- m/s</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div id="map"></div>
+
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      let map;
+      let marker;
+      const weatherApiKey = "45eceb921295ee4d822aa508b3185d0e"; // Replace with your OpenWeatherMap API Key
+      const geocodingApiKey = "AIzaSyAxVAdBiQtgyFYDoKdqXeXL_9kq5H2Oc4w"; // Replace with your Google API Key
+
+      // Initialize map with default location (Mumbai)
+      function initMap() {
+        const defaultLocation = { lat: 19.076, lng: 72.8777 }; // Mumbai coordinates
+
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: defaultLocation,
+          zoom: 10,
+        });
+
+        marker = new google.maps.Marker({
+          position: defaultLocation,
+          map: map,
+        });
+
+        // Load default weather for Mumbai
+        fetchWeather(defaultLocation.lat, defaultLocation.lng, "Mumbai");
+
+        // Add event listener for map clicks
+        map.addListener("click", (event) => {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+          fetchCityName(lat, lng);
+        });
+      }
+
+      // Update the marker position
+      function updateMarker(position) {
+        marker.setPosition(position);
+        map.panTo(position);
+      }
+
+      // Fetch weather data
+      function fetchWeather(lat, lng, city) {
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${weatherApiKey}`;
+        fetch(weatherUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("city-name").innerText = city;
+            document.getElementById("temp").innerText = `${data.main.temp}°C`;
+            document.getElementById(
+              "humidity"
+            ).innerText = `Humidity: ${data.main.humidity}%`;
+            document.getElementById(
+              "pressure"
+            ).innerText = `Pressure: ${data.main.pressure} hPa`;
+            document.getElementById(
+              "wind"
+            ).innerText = `Wind: ${data.wind.speed} m/s`;
+          });
+      }
+
+      // Reverse geocoding to get city name
+      function fetchCityName(lat, lng) {
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${geocodingApiKey}`;
+        fetch(geocodeUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            const city =
+              data.results[0].address_components.find((component) =>
+                component.types.includes("locality")
+              )?.long_name || "Selected Location";
+            updateMarker({ lat, lng });
+            fetchWeather(lat, lng, city);
+          });
+      }
+
+      // Search for a city manually
+      function searchCity() {
+        const city = document.getElementById("city-search").value;
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${geocodingApiKey}`;
+        fetch(geocodeUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.results.length > 0) {
+              const location = data.results[0].geometry.location;
+              const cityName = data.results[0].formatted_address.split(",")[0];
+              updateMarker(location);
+              fetchWeather(location.lat, location.lng, cityName);
+            } else {
+              alert("City not found. Please try again.");
+            }
+          });
+      }
+    </script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxVAdBiQtgyFYDoKdqXeXL_9kq5H2Oc4w&callback=initMap"
+      async
+      defer
+    ></script>
+  </body>
+</html>
